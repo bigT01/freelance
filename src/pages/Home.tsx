@@ -1,6 +1,6 @@
 // src/pages/Home.tsx
 import React from 'react';
-import { Container, Typography, Box, Grid, Paper, Avatar, List, ListItem, ListItemText } from '@mui/material';
+import {Container, Typography, Box, Grid, Paper, Avatar, List, ListItem, ListItemText, Divider} from '@mui/material';
 import { styled } from '@mui/system';
 import JobList from '../components/JobList';
 
@@ -25,6 +25,15 @@ const PartnerAvatar = styled(Avatar)(({ theme }) => ({
     margin: theme.spacing(1),
 }));
 
+const HeroSection = styled(Box)(({ theme }) => ({
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.primary.contrastText,
+    padding: theme.spacing(8, 2),
+    textAlign: 'center',
+    borderRadius: theme.shape.borderRadius,
+    marginBottom: theme.spacing(4),
+}));
+
 const partners = [
     { name: 'Partner 1', logo: '/path/to/logo1.png' },
     { name: 'Partner 2', logo: '/path/to/logo2.png' },
@@ -35,31 +44,31 @@ const partners = [
 const Home: React.FC = () => {
     return (
         <HomeContainer maxWidth="lg">
-            <Box sx={{ textAlign: 'center', marginBottom: 4 }}>
+            {/*<HeroSection>*/}
                 <Typography variant="h3" component="h1" gutterBottom>
                     Welcome to Freelance App
                 </Typography>
-                <Typography variant="h6" color="textSecondary">
+                <Typography variant="h6" color="inherit">
                     Connect with top freelancers and clients from around the world.
                 </Typography>
-            </Box>
+            {/*</HeroSection>*/}
 
             <Grid container spacing={4} sx={{ marginBottom: 4 }}>
                 <Grid item xs={12} sm={4}>
                     <StatBox>
-                        <Typography variant="h4">100k+</Typography>
+                        <Typography variant="h4" color="primary">100k+</Typography>
                         <Typography variant="body1">Freelancers</Typography>
                     </StatBox>
                 </Grid>
                 <Grid item xs={12} sm={4}>
                     <StatBox>
-                        <Typography variant="h4">50k+</Typography>
+                        <Typography variant="h4" color="primary">50k+</Typography>
                         <Typography variant="body1">Clients</Typography>
                     </StatBox>
                 </Grid>
                 <Grid item xs={12} sm={4}>
                     <StatBox>
-                        <Typography variant="h4">1M+</Typography>
+                        <Typography variant="h4" color="primary">1M+</Typography>
                         <Typography variant="body1">Jobs Posted</Typography>
                     </StatBox>
                 </Grid>
@@ -73,6 +82,8 @@ const Home: React.FC = () => {
                     </Grid>
                 ))}
             </Grid>
+
+            <Divider sx={{ my: 4 }} />
 
             <SectionTitle variant="h5">Popular Jobs</SectionTitle>
             <JobList />
