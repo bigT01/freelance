@@ -68,7 +68,7 @@ const FreelancerJobs: React.FC = () => {
         const fetchContracts = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get(`http://localhost:3333/contracts/my-contracts`, {
+                const response = await axios.get(`https://freelance-backend-production-beb9.up.railway.app/my-contracts`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
