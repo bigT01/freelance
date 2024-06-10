@@ -1,122 +1,155 @@
-import React from 'react';
-import axiosInstance from '../utils/axiosInstance';
-import { useParams, useNavigate } from 'react-router-dom';
-import { parseEther } from 'ethers';
-import { deployContract, confirmWork } from '../utils/blockchain';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
-import {
-    Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button,
-    Card, CardContent, CardActions, Typography, Container, Grid
-} from '@mui/material';
+import { deployContract, confirmWork } from '../utils/blockchain';
+import { Container, Typography, Button, Paper, Box, List, ListItem, ListItemText, CircularProgress, Alert } from '@mui/material';
+import {parseUnits} from "ethers";
+import axiosInstance from "../utils/axiosInstance";
+
+interface Applicant {
+    id: string;
+    proposal: string;
+    status: string;
+    user: {
+        id: string;
+        userName: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        walletAddress ?: string
+    };
+    job: {
+        id: string;
+        title: string;
+        budget: number;
+        deadline: string;
+        postDate: string;
+        jobStatus: string;
+        startDate: string;
+    };
+}
 
 const Applicants: React.FC = () => {
     const { jobId } = useParams<{ jobId: string }>();
-    const navigate = useNavigate();
     const { token, user } = useUserStore();
-    const [applicants, setApplicants] = React.useState([]);
-    const [openDialog, setOpenDialog] = React.useState(false);
-    const [dialogMessage, setDialogMessage] = React.useState('');
+    const [applicants, setApplicants] = useState<Applicant[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [contractAddress, setContractAddress] = useState<string | null>(null);
 
-    React.useEffect(() => {
+    useEffect(() => {
         const fetchApplicants = async () => {
             try {
-                const response = await axiosInstance.get(`/job-applications/job/${jobId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
+                setLoading(true);
+                const response = await axiosInstance.get(`job-applications/job/${jobId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
                 });
                 setApplicants(response.data);
+                setLoading(false);
             } catch (error) {
                 console.error('Error fetching applicants:', error);
+                setLoading(false);
             }
         };
+
         fetchApplicants();
     }, [jobId, token]);
 
-    const handleAccept = async (applicationId: string, developerAddress: string) => {
-        if (!user?.walletAddress) {
-            setDialogMessage('You do not have a wallet address. Please connect your wallet.');
-            setOpenDialog(true);
-            return;
-        }
+    const handleDeployContract = async (applicant: Applicant) => {
+        try {
+            if (!applicant.user || !applicant.job) {
+                alert('Applicant or job information is missing.');
+                return;
+            }
 
-        if (!developerAddress) {
-            setDialogMessage('The freelancer does not have a wallet address.');
-            setOpenDialog(true);
+            setLoading(true);
+            const developerAddress = applicant.user?.walletAddress; // Assuming user ID is used for developer address
+            const paymentAmount = applicant.job.budget; // Assuming budget is the payment amount
+
+            const contractAddr = await deployContract(developerAddress || '', parseUnits('0.0001', 'ether'));
+            if (contractAddr) {
+                setContractAddress(contractAddr);
+
+                // Save contract address to the backend
+                await axiosInstance.post('contracts', {
+                    contractAddress: contractAddr,
+                    clientAddress: user?.walletAddress, // Replace with actual client address
+                    freelancerAddress: developerAddress,
+                    jobId: applicant.job.id,
+                }, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                alert('Contract deployed successfully');
+            } else {
+                alert('Failed to deploy contract');
+            }
+            setLoading(false);
+        } catch (error) {
+            console.error('Error deploying contract:', error);
+            alert('Error deploying contract');
+            setLoading(false);
+        }
+    };
+
+    const handleConfirmWork = async () => {
+        if (!contractAddress) {
+            alert('Contract address is not available. Deploy the contract first.');
             return;
         }
 
         try {
-            // Step 1: Deploy the contract
-            const contractAddress = await deployContract(developerAddress, parseEther('0.1')); // Adjust the payment amount as needed
-
-            // Step 2: Confirm work with the client as the signer
-            if (typeof contractAddress === 'string') {
-                await confirmWork(contractAddress);
-            }
-
-            // Step 3: Accept the freelancer in the backend
-            await axiosInstance.patch(`/job-applications/${jobId}/accept/${applicationId}`, {}, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            navigate(`/chat/${jobId}/${developerAddress}`);
+            setLoading(true);
+            await confirmWork(contractAddress);
+            alert('Work confirmed successfully');
+            setLoading(false);
         } catch (error) {
-            console.error('Error accepting applicant:', error);
+            console.error('Error confirming work:', error);
+            alert('Error confirming work');
+            setLoading(false);
         }
-    };
-
-    const handleCloseDialog = () => {
-        setOpenDialog(false);
     };
 
     return (
         <Container>
-            <Typography variant="h4" gutterBottom>
-                Applicants for Job {jobId}
+            <Typography variant="h4" component="h1" gutterBottom>
+                Applicants
             </Typography>
-            <Grid container spacing={3}>
-                {applicants.map((applicant: any) => (
-                    <Grid item xs={12} sm={6} md={4} key={applicant.id}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h6">
-                                    {applicant.user.firstName} {applicant.user.lastName}
-                                </Typography>
-                                <Typography variant="body2" color="textSecondary">
-                                    {applicant.user.email}
-                                </Typography>
-                                <Typography variant="body1" gutterBottom>
-                                    Proposal: {applicant.proposal}
-                                </Typography>
-                            </CardContent>
-                            <CardActions>
+            {loading && <CircularProgress />}
+            {applicants.length === 0 && !loading && <Alert severity="info">No applicants found</Alert>}
+            <List>
+                {applicants.map((applicant) => (
+                    <ListItem key={applicant.id}>
+                        <Paper elevation={3} style={{ width: '100%', padding: '1em' }}>
+                            <ListItemText
+                                primary={`${applicant.user.firstName} ${applicant.user.lastName}`}
+                                secondary={applicant.proposal}
+                            />
+                            <Box display="flex" justifyContent="flex-end" gap={2}>
                                 <Button
                                     variant="contained"
                                     color="primary"
-                                    onClick={() => handleAccept(applicant?.walletAddress, applicant.user.walletAddress)}
+                                    onClick={() => handleDeployContract(applicant)}
+                                    disabled={loading}
                                 >
-                                    Accept
+                                    Deploy Contract
                                 </Button>
                                 <Button
-                                    variant="outlined"
-                                    color="primary"
-                                    onClick={() => navigate(`/chat/${jobId}/${applicant.user.id}`)}
+                                    variant="contained"
+                                    color="secondary"
+                                    onClick={handleConfirmWork}
+                                    disabled={!contractAddress || loading}
                                 >
-                                    Chat
+                                    Confirm Work
                                 </Button>
-                            </CardActions>
-                        </Card>
-                    </Grid>
+                            </Box>
+                        </Paper>
+                    </ListItem>
                 ))}
-            </Grid>
-            <Dialog open={openDialog} onClose={handleCloseDialog}>
-                <DialogTitle>{"Wallet Address Missing"}</DialogTitle>
-                <DialogContent>
-                    <DialogContentText>{dialogMessage}</DialogContentText>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={handleCloseDialog} color="primary">OK</Button>
-                </DialogActions>
-            </Dialog>
+            </List>
         </Container>
     );
 };

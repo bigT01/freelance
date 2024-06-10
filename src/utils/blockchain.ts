@@ -1,5 +1,14 @@
 // src/utils/blockchain.ts
-import {BrowserProvider, ContractFactory, Contract, parseEther} from 'ethers';
+import {
+    BrowserProvider,
+    ContractFactory,
+    Contract,
+    parseEther,
+    parseUnits,
+    formatUnits,
+    BaseContract,
+    ContractTransactionResponse
+} from 'ethers';
 
 // const contractAddress = '0x57Fc48D4bED4d2D8299FA43BF7233783831e28cC';
 const contractABI = [
@@ -110,19 +119,50 @@ const getProviderAndSigner = async () => {
 export const deployContract = async (developerAddress: string, paymentAmount: any) => {
     const providerAndSigner = await getProviderAndSigner();
     if (providerAndSigner) {
-        const { signer } = providerAndSigner;
+        const { provider, signer } = providerAndSigner;
         const factory = new ContractFactory(contractABI, contractBytecode, signer);
 
-        // Adjust the gas price and gas limit as needed
-        const contract = await factory.deploy(developerAddress, {
-            value: paymentAmount,
-            gasLimit: 500000, // Adjust this value as needed
-            gasPrice: parseEther('0.000000001'), // Adjust this value as needed
-        });
-        await contract.waitForDeployment();
-        const address = contract.target.toString(); // Ensure address is a string
-        console.log('Contract deployed at:', address);
-        return address;
+        const balance = await provider.getBalance(await signer.getAddress());
+        const gasPrice = parseUnits('2', 'wei'); // Adjust this value as needed
+        const gasLimit = 500000; // Adjust this value as needed
+        const transactionCost = gasPrice * BigInt(gasLimit) + BigInt(paymentAmount);
+
+        if (balance < transactionCost) {
+            const balanceFormatted = formatUnits(balance, 'ether');
+            const transactionCostFormatted = formatUnits(transactionCost, 'ether');
+            console.error(`Insufficient funds: Balance is ${balanceFormatted} ETH but transaction requires ${transactionCostFormatted} ETH.`);
+            alert(`Insufficient funds: Balance is ${balanceFormatted} ETH but transaction requires ${transactionCostFormatted} ETH.`);
+            return null;
+        }
+
+        try {
+            const contract = await factory.deploy(developerAddress, {
+                value: paymentAmount,
+                gasLimit,
+                gasPrice,
+            }) as BaseContract & { deploymentTransaction(): ContractTransactionResponse };
+
+            const deploymentTx = contract.deploymentTransaction();
+            if (deploymentTx) {
+                const receipt = await deploymentTx.wait();
+                const address = contract.target.toString(); // Ensure address is a string
+
+                console.log('Contract deployed at:', address);
+                return address;
+            } else {
+                console.error('Deployment transaction not found.');
+                return null;
+            }
+        } catch (error) {
+            if (error instanceof Error) {
+                console.error('Error deploying contract:', error.message);
+                alert(`Error deploying contract: ${error.message}`);
+            } else {
+                console.error('Unknown error deploying contract:', error);
+                alert('An unknown error occurred while deploying the contract.');
+            }
+            return null;
+        }
     }
     return null;
 };
@@ -140,8 +180,18 @@ export const getContract = async (contractAddress: string) => {
 export const confirmWork = async (contractAddress: string) => {
     const contract = await getContract(contractAddress);
     if (contract) {
-        const tx = await contract.confirmWork(); // Directly call the method on the contract instance
-        await tx.wait();
-        console.log('Work confirmed:', tx);
+        try {
+            const tx = await contract.confirmWork(); // Directly call the method on the contract instance
+            await tx.wait();
+            console.log('Work confirmed:', tx);
+        } catch (error) {
+            if (error instanceof Error) {
+                console.error('Error confirming work:', error.message);
+                alert(`Error confirming work: ${error.message}`);
+            } else {
+                console.error('Unknown error confirming work:', error);
+                alert('An unknown error occurred while confirming work.');
+            }
+        }
     }
 };
