@@ -20,6 +20,7 @@ import Applicants from "./pages/Applicants";
 import UserProfile from "./pages/UserProfile";
 import ChatPage from "./pages/ChatPage";
 import FreelancerJobs from "./pages/FreelancerJobs";
+import EditProfile from "./pages/EditProfile";
 
 
 const PrivateRoute: React.FC<{ component: React.FC }> = ({ component: Component }) => {
@@ -49,6 +50,7 @@ const App: React.FC = () => {
                             <Route path="/user-profile/:userId" element={<PrivateRoute component={UserProfile} />} />
                             <Route path="/chat/:jobId/:receiverId" element={<PrivateRoute component={ChatPage} />} />
                             <Route path="/freelancer-jobs" element={<PrivateRoute component={FreelancerJobs} />} />
+                            <Route path="/edit-profile" element={<PrivateRoute component={EditProfile} />} />
                         </Routes>
                     </main>
                     <Footer />
