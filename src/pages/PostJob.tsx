@@ -8,7 +8,7 @@ const PostJob: React.FC = () => {
     const { postJob } = useUserStore();
     const navigate = useNavigate();
     const [title, setTitle] = useState('');
-    const [budget, setBudget] = useState(0);
+    const [budget, setBudget] = useState('');
     const [deadline, setDeadline] = useState('');
     const [startDate, setStartDate] = useState('');
     const postDate = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
@@ -16,7 +16,7 @@ const PostJob: React.FC = () => {
     const handleSubmit = () => {
         const job = {
             title,
-            budget,
+            budget: parseFloat(budget),
             deadline,
             postDate,
             jobStatus: 'ongoing',
@@ -46,9 +46,9 @@ const PostJob: React.FC = () => {
                         variant="outlined"
                         fullWidth
                         margin="normal"
-                        type="number"
+                        type="text"
                         value={budget}
-                        onChange={(e) => setBudget(Number(e.target.value))}
+                        onChange={(e) => setBudget((e.target.value))}
                     />
                     <TextField
                         label="Deadline"

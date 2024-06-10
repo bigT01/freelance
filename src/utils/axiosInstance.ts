@@ -3,7 +3,8 @@ import axios from 'axios';
 import { useUserStore } from '../store/userStore';
 
 const axiosInstance = axios.create({
-    baseURL: 'https://freelance-backend-production-beb9.up.railway.app/',
+    baseURL: 'http://localhost:3333/',
+    // baseURL: 'https://freelance-backend-production-beb9.up.railway.app/',
     headers: {
         'Content-Type': 'application/json',
     },
