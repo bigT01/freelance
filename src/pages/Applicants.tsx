@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
-import { deployContract, approveWork, submitWork, cancelContract } from '../utils/blockchain';
+import {deployContract, approveWork, submitWork, cancelContract, confirmWork} from '../utils/blockchain';
 import { Container, Typography, Button, Paper, Box, List, ListItem, ListItemText, CircularProgress, Alert } from '@mui/material';
 import axiosInstance from "../utils/axiosInstance";
 
@@ -99,7 +99,7 @@ const Applicants: React.FC = () => {
             const developerAddress = applicant.user?.walletAddress; // Assuming user ID is used for developer address
             const paymentAmount = applicant.job.budget; // Assuming budget is the payment amount
 
-            const contractAddr = await deployContract(developerAddress || '', (paymentAmount / 10000).toString());
+            const contractAddr = await deployContract(developerAddress || '', (paymentAmount / 1000).toString());
             if (contractAddr) {
                 setContractAddress(contractAddr);
 
@@ -126,6 +126,25 @@ const Applicants: React.FC = () => {
             setLoading(false);
         }
     };
+
+    const handleConfirmWork = async () => {
+        if (!contractAddress) {
+            alert('Contract address is not available. Deploy the contract first.');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await confirmWork(contractAddress);
+            alert('Work confirmed successfully');
+            setLoading(false);
+        } catch (error) {
+            console.error('Error confirming work:', error);
+            alert('Error confirming work');
+            setLoading(false);
+        }
+    };
+
 
     const handleApproveWork = async (contract: Contract) => {
         if (!contract.contractAddress) {
@@ -206,6 +225,14 @@ const Applicants: React.FC = () => {
                                     disabled={loading}
                                 >
                                     Deploy Contract
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    color="secondary"
+                                    onClick={handleConfirmWork}
+                                    disabled={!contractAddress || loading}
+                                >
+                                    Confirm Work
                                 </Button>
                             </Box>
                         </Paper>

@@ -202,3 +202,24 @@ export const cancelContract = async (contractAddress: string) => {
         return null;
     }
 };
+
+export const confirmWork = async (contractAddress: string) => {
+    try {
+        const accounts = await window.web3.eth.getAccounts();
+        const contract = new window.web3.eth.Contract(contractABI, contractAddress);
+
+        const receipt = await contract.methods.confirmWork().send({
+            from: accounts[0],
+            gas: '150000',
+            gasPrice: '30000000000'
+        });
+
+        console.log('Work confirmed:', receipt);
+        return receipt;
+    } catch (error) {
+        console.error('Error confirming work:', error);
+        // @ts-ignore
+        alert(`Error confirming work: ${error.message}`);
+        return null;
+    }
+};
