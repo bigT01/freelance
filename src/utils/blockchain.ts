@@ -111,7 +111,7 @@ export const deployContract = async (developerAddress: string, paymentAmount: st
             .send({
                 from: accounts[0],
                 value: window.web3.utils.toWei(paymentAmount, 'ether'),
-                gas: '1500000',
+                gas: '15000000',
                 gasPrice: '30000000000'
             });
 
