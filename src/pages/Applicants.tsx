@@ -99,7 +99,7 @@ const Applicants: React.FC = () => {
             const developerAddress = applicant.user?.walletAddress; // Assuming user ID is used for developer address
             const paymentAmount = applicant.job.budget; // Assuming budget is the payment amount
 
-            const contractAddr = await deployContract(developerAddress || '', (paymentAmount / 1000).toString());
+            const contractAddr = await deployContract(developerAddress || '', (paymentAmount / 10000).toString());
             if (contractAddr) {
                 setContractAddress(contractAddr);
 
