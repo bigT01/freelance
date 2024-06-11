@@ -100,8 +100,9 @@ const contractBytecode = '6080604052604051610cb7380380610cb783398181016040528101
 
 export const deployContract = async (developerAddress: string, paymentAmount: string) => {
     try {
-        await connectMetaMask();
-        const accounts = await window.web3.eth.getAccounts();
+        const clientAddress = await connectMetaMask();
+        if (!clientAddress) return;
+
         const contract = new window.web3.eth.Contract(contractABI);
 
         const deployedContract = await contract.deploy({
@@ -109,9 +110,9 @@ export const deployContract = async (developerAddress: string, paymentAmount: st
             arguments: [developerAddress]
         })
             .send({
-                from: accounts[0],
+                from: clientAddress,
                 value: window.web3.utils.toWei(paymentAmount, 'ether'),
-                gas: '15000000',
+                gas: '1500000',
                 gasPrice: '30000000000'
             });
 
